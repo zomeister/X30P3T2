@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_restful import Api
 from flask_cors import CORS
-
+from flask_login import LoginManager
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///application.db'
@@ -31,3 +31,6 @@ bcrypt = Bcrypt(app)
 api = Api(app)
 
 cors = CORS(app)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
