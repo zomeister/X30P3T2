@@ -1,4 +1,7 @@
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.orm import validates
+from sqlalchemy.ext.hybrid import hybrid_property
 from config import db, bcrypt
 
 class User(db.Model, SerializerMixin):
@@ -14,7 +17,19 @@ class User(db.Model, SerializerMixin):
     # relationships
     owner = db.relationship('Owner', uselist=False, back_populates='user')
     # serialization
-    serialize_rules = ()
+    serialize_rules = ('-owner.user',)
+    # password validation
+    @hybrid_property
+    def password_hash(self):
+        return self._password_pash
+    
+    @password_hash.setter
+    def password_hash(self, password):
+        password_hash = bcrypt.generate_password_hash(password.encode('utf-8'))
+        self._password_hash = password_hash.decode('utf-8')
+        
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(self._password_hash, password.encode('utf-8'))
     # validation
     
 class Owner(db.Model, SerializerMixin):
@@ -27,12 +42,12 @@ class Owner(db.Model, SerializerMixin):
     location = db.Column(db.String)
     bio = db.Column(db.String)
     # foreign keys
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True)
     # relationships
     user = db.relationship('User', back_populates='owner')
     adoptions = db.relationship('Adoption', back_populates='owner', cascade='all, delete-orphan')
     # serialization
-    serialize_rules = ('-adoptions.owner', )
+    serialize_rules = ('-adoptions.owner', '-user.owner',)
     # validation
     
 class Pet(db.Model, SerializerMixin):
