@@ -27,29 +27,27 @@ export default function PetForm () {
         .catch( (err) => {console.error(err)} )
     }
     return (
-        <div>
-            <h1>Pet Form</h1>
-            <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} >
-                <Form>
-                    <div className="form-group">
-                        <label>Name</label>
-                        <Field type="text" name="name" as={FormBS.Control} />
-                        <ErrorMessage name="name" component={FormBS.Text} />
-                    </div>
-                    <div className="form-group">
-                        <label>Species</label>
-                        <Field type="text" name="species" as={FormBS.Control} />
-                        <ErrorMessage name="species" component={FormBS.Text} />
-                    </div>
-                    <div className="form-group">
-                        <label>Photo</label>
-                        <Field type="text" name="photo" as={FormBS.Control} />
-                        <ErrorMessage name="photo" component={FormBS.Text} />
-                    </div>
-                    <Button type="submit" className="btn btn-primary">Submit</Button>
-                    <Button type='reset'>Reset</Button>
-                </Form>
-            </Formik>
-        </div>
+        <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} >
+            <Form>
+                <h1>Pet Form</h1>
+                <div className="form-group">
+                    <label>Name</label>
+                    <Field type="text" name="name" as={FormBS.Control} />
+                    <ErrorMessage name="name" component={FormBS.Text} />
+                </div>
+                <div className="form-group">
+                    <label>Species</label>
+                    <Field type="text" name="species" as={FormBS.Control} />
+                    <ErrorMessage name="species" component={FormBS.Text} />
+                </div>
+                <div className="form-group">
+                    <label>Photo</label>
+                    <Field type="text" name="photo" as={FormBS.Control} />
+                    <ErrorMessage name="photo" component={FormBS.Text} />
+                </div>
+                <Button type="submit" className="btn btn-primary">Submit</Button>
+                <Button type='reset'>Reset</Button>
+            </Form>
+        </Formik>
     )
 }

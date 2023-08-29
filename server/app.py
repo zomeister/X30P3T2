@@ -2,7 +2,7 @@ from flask import session, request, make_response, jsonify, abort
 from flask_restful import Resource
 from flask_login import login_user, logout_user, login_required, current_user
 from config import db, app, api, login_manager, Migrate
-from models import User, Owner, Pet, Adoption, Action
+from models import User, Owner, Pet, Adoption, Action, PetState
 import traceback
 
 @app.route('/')
@@ -13,7 +13,7 @@ def index():
 def load_user(user_id):
     return User.query.filter_by(id=int(user_id)).first()
 
-# -------- SIGNUP -------- #
+# -------- SIGNUP -------- (fin) ---- #
 class Signup(Resource):
     def post(self):
         data = request.get_json()
@@ -32,7 +32,7 @@ class Signup(Resource):
             traceback.print_exc()
             return {"error": "an error occurred creating user", "message": str(e)}, 500
 api.add_resource(Signup, '/signup')
-# -------- LOGIN -------- #
+# -------- LOGIN -------- (fin) ---- #
 class Login(Resource):
     def post(self):
         data = request.get_json()
@@ -51,7 +51,7 @@ class Login(Resource):
             traceback.print_exc()
             return {"error": "an error occurred loading user", "message": str(e)}, 500
 api.add_resource(Login, '/login')
-# -------- LOGOUT -------- #
+# -------- LOGOUT -------- (fin) ---- #
 class Logout(Resource):
     def post(self):
         try:
@@ -60,7 +60,7 @@ class Logout(Resource):
         except:
             return {"error": "error logging out"}, 500
 api.add_resource(Logout, '/logout')
-# -------- AUTHENTICATION -------- #
+# -------- AUTHENTICATION -------- (fin) ---- #
 class AuthorizeSession(Resource):
     def get(self):
         try:
@@ -72,49 +72,46 @@ class AuthorizeSession(Resource):
 api.add_resource(AuthorizeSession, '/authorize_session')
 # -------- <user> PROFILE -------- #
 class Profile(Resource):
-    # @login_required
-    def get(self):
+    @login_required
+    def get(self, user_id):
         try:
-            pass
+            user = User.query.filter_by(id=int(user_id)).first()
+            owner = Owner.query.filter_by(id=user.owner_id).first()
+            return owner.to_dict(), 200
         except:
-            return {"error": "error retrieving user profile"}, 500
-    def post(self):
-        data = request.get_json()
-        try:
-            new_owner = Owner(
-                first_name=data['first_name'],
-                last_name=data['last_name'],
-                avatar=data['avatar'],
-                location=data['location'],
-                bio=data['bio']
-            )
-            db.session.add(new_owner)
-            db.session.commit()
-            return new_owner.to_dict(), 201
-        except Exception as e:
-            traceback.print_exc()
-            return {"error": "an error occurred creating profile", "message": str(e)}, 500
-api.add_resource(Profile, '/profile') # This needs to be fixed
+            return {"error": "error retrieving owner profile"}, 500
+    # def patch(self, user_id):
+    #     data = request.get_json()
+    #     try:
+    #         new_owner = Owner(
+    #             first_name=data['first_name'],
+    #             last_name=data['last_name'],
+    #             avatar=data['avatar'],
+    #             location=data['location'],
+    #             bio=data['bio']
+    #         )
+    #         db.session.add(new_owner)
+    #         db.session.commit()
+    #         return new_owner.to_dict(), 201
+    #     except Exception as e:
+    #         traceback.print_exc()
+    #         return {"error": "an error occurred creating profile", "message": str(e)}, 500
+api.add_resource(Profile, '/profile/<int:user_id>') # This needs to be fixed
+
 # -------- POUND (pets with no owner that are able to be adopted) -------- #
 class Pound(Resource):
     def get(self):
         try:
-            orphans = Adoption.query.filter(Adoption.pet_id == None).all()
-            orphans_dict = [p.serialize() for p in orphans]
+            orphans = Pet.query.filter(Pet.adoptions == None).all()
+            orphans_dict = [o.to_dict(rules=('-adoptions','-state.pet',)) for o in orphans]
             return orphans_dict, 200
         except Exception as e:
             traceback.print_exc()
             return {"error": "an error occurred retrieving pets", "message": str(e)}, 500
-        
-    def post(self):
-        try:
-            pass
-        except:
-            pass
 api.add_resource(Pound, '/pound')
 # -------- <user/owner> PETS (pets of current owner/user) -------- ???? #
 class AdoptedPets(Resource):
-    def get(self, id):
+    def get(self):
         try:
             adopted_pets = Adoption.query.filter(Adoption.owner_id == id).all()
             adopted_pets_dict = [p.serialize() for p in adopted_pets]
@@ -138,12 +135,12 @@ class AdoptedPets(Resource):
 api.add_resource(AdoptedPets, '/adopted_pets')
 
 # --------------------------------------------------------- #
-# -------- OWNERS "/owners", "/owners/:id" -------- #
+# -------- OWNERS -------- #
 class Owners(Resource):
     def get(self):
         try:
             owners = Owner.query.all()
-            owners_dict = [o.to_dict() for o in owners]
+            owners_dict = [o.to_dict(rules=('-user_id',)) for o in owners]
             return owners_dict, 200
         except Exception as e:
             traceback.print_exc()
@@ -191,7 +188,7 @@ class OwnerById(Resource):
             return {"error": "an error occurred retrieving pets", "message": str(e)}, 500
 api.add_resource(Owners, '/owners')
 api.add_resource(OwnerById, '/owners/<int:id>')
-# -------- PET "/pets", "/pets/:id" -------- #
+# -------- PET -------- #
 class Pets(Resource):
     def get(self):
         try:
@@ -241,7 +238,7 @@ class PetById(Resource):
             return {"error": "an error occurred retrieving pets", "message": str(e)}, 500      
 api.add_resource(Pets, '/pets')
 api.add_resource(PetById, '/pets/<int:id>')
-# -------- ADOPTIONS "/adoptions", "/adoptions/:id" -------- #
+# -------- ADOPTIONS -------- #
 class Adoptions(Resource):
     def get(self):
         try:
@@ -254,9 +251,9 @@ class Adoptions(Resource):
     def post(self):
         data = request.get_json()
         try:
-            owner_row = Owner.query.filter_by(username=data['owner_username']).first()
+            owner_row = Owner.query.filter_by(id=data['owner_id']).first()
             owner_id = owner_row.id
-            pet_row = Pet.query.filter_by(name=data['pet_name']).first()
+            pet_row = Pet.query.filter_by(id=data['pet_id']).first()
             pet_id = pet_row.id
             new_adoption = Adoption(
                 owner_id = owner_id,
@@ -296,7 +293,7 @@ class AdoptionById(Resource):
             return {"error": "an error occurred retrieving adoptions", "message": str(e)}, 500
 api.add_resource(Adoptions, '/adoptions')
 api.add_resource(AdoptionById, '/adoptions/<int:id>')
-# -------- ACTIONS "/actions", "/actions/:id" -------- #
+# -------- ACTIONS -------- #
 class Actions(Resource):
     def get(self):
         try:
@@ -340,6 +337,64 @@ class ActionById(Resource):
             return {"error": "an error occurred retrieving actions", "message": str(e)}, 500
 api.add_resource(Actions, '/actions')
 api.add_resource(ActionById, '/actions/<int:id>')
+
+
+class OwnersByAdoption(Resource):
+    def get(self, adoption_id):
+        try:
+            adoption = Adoption.query.filter_by(id=adoption_id).first()
+            owner = Owner.query.filter_by(id=adoption.owner_id).first()
+            return owner.to_dict(rules=('-adoptions',)), 200
+        except:
+            return {"error": "owner not found"}, 404
+api.add_resource(OwnersByAdoption, '/adoptions/<int:adoption_id>/owner')
+
+class PetByAdoption(Resource):
+    def get(self, adoption_id):
+        try:
+            adoption = Adoption.query.filter_by(id=adoption_id).first()
+            pet = Pet.query.filter_by(id=adoption.pet_id).first()
+            return pet.to_dict(rules=('-adoptions', '-state.pet',)), 200
+        except:
+            return {"error": "pet not found"}, 404
+api.add_resource(PetByAdoption, '/adoptions/<int:adoption_id>/pet')
+
+class PetByOwner(Resource):
+    def get(self, owner_id):
+        try:
+            adoptions = Adoption.query.filter_by(owner_id=owner_id).all()
+            pets = [a.pet.to_dict() for a in adoptions]
+            return pets, 200
+        except:
+            return {"error": "pet not found"}, 404
+        
+api.add_resource(PetByOwner, '/owners/<int:owner_id>/pets')
+
+class PetStatsByPet(Resource):
+    def get (self, pet_id):
+        pet_state = PetState.query.filter_by(pet_id=pet_id).first()
+        return pet_state.to_dict(rules=('-pet',)), 200
+    def patch (self, pet_id):
+        data = request.get_json()
+        try:
+            state = PetState.query.filter_by(pet_id = pet_id).first()
+            for key in data:
+                setattr(state, key, data[key])
+            db.session.commit()
+            return state.to_dict(), 200
+        except Exception as e:
+            traceback.print_exc()
+            return {"error": "an error occurred retrieving actions", "message": str(e)}, 500
+    def delete (self, pet_id):
+        try:
+            state = PetState.query.filter_by(pet_id = pet_id).first()
+            db.session.delete(state)
+            db.session.commit()
+            return '', 204
+        except:
+            return {'errors': 'action not found'}, 404
+api.add_resource(PetStatsByPet, '/pet/<int:pet_id>/stats')
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
