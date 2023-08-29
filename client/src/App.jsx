@@ -1,12 +1,12 @@
 import { useState, useEffect, useContext } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 
-// import { AuthContext } from '/context/AuthContext'
+// import { AuthContext } from './context/AuthContext'
 
 import Home from './pages/Home'
 import About from './pages/About'
 import Login from './pages/Login'
-import Register from './pages/Register'
+import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import FeaturedPets from './pages/FeaturedPets'
@@ -39,13 +39,23 @@ function App() {
 
   // }, [])
   const [owners, setOwners] = useState([])
+  const [pets, setPets] = useState([])
+
   useEffect(() => {
       fetchOwners()
+      fetchPets()
   },[])
   function fetchOwners() {
-      fetch('http://localhost:5555/owners')
+      fetch('/api/owners')
       .then(res => res.json())
-      .then(owners => console.log(owners))
+      .then(owners => setOwners(owners))
+      console.log(owners)
+  }
+  function fetchPets() {
+    fetch('/api/pets')
+    .then(res => res.json())
+    .then(pets => setPets(pets))
+    console.log(pets)
   }
 
   return (
@@ -55,11 +65,11 @@ function App() {
           <Route exact path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/featured_owners" element={<FeaturedOwners owners={owners}/>} />
-          <Route path="/featured_pets" element={<FeaturedPets />} />
+          <Route path="/featured_owners" element={<FeaturedOwners owners={owners} />} />
+          <Route path="/featured_pets" element={<FeaturedPets pets={pets} />} />
           <Route path="/pound" element={<Pound />} />
         </Routes>
         <Footer />

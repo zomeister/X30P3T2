@@ -47,7 +47,7 @@ class Owner(db.Model, SerializerMixin):
     user = db.relationship('User', back_populates='owner')
     adoptions = db.relationship('Adoption', back_populates='owner', cascade='all, delete-orphan')
     # serialization
-    serialize_rules = ('-adoptions.owner', '-user.owner',)
+    serialize_rules = ('-adoptions.owner', '-user.owner', '-adoptions.pet', '-adoptions.actions', '-adoptions.owner_id', )
     # validation
     
 class Pet(db.Model, SerializerMixin):
@@ -59,7 +59,7 @@ class Pet(db.Model, SerializerMixin):
     # relationships
     adoptions = db.relationship('Adoption', back_populates='pet', cascade='all, delete-orphan')
     # serialization
-    serialize_rules = ('-adoptions.pet',)
+    serialize_rules = ('-adoptions.pet', '-adoptions.owner', '-adoptions.actions', '-adoptions.pet_id',)
     # validation
     
 class Adoption(db.Model, SerializerMixin):
@@ -74,7 +74,7 @@ class Adoption(db.Model, SerializerMixin):
     pet = db.relationship('Pet', back_populates='adoptions')
     actions = db.relationship('Action', back_populates='adoption')
     # serialization
-    serialize_rules = ('-owner.adoptions', '-pet.adoptions',)
+    serialize_rules = ('-owner.adoptions', '-pet.adoptions', '-owner.bio', '-owner.user', '-owner.location', )
     # validation
     
 class Action(db.Model, SerializerMixin):
