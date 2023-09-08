@@ -5,7 +5,7 @@ import { Card, Button,  } from 'react-bootstrap'
 // import { useNavigate } from "react-router-dom"
 
 export default function Profile ({navigate}) {
-    const { user, setUser } = useContext(AuthContext)
+    const {auth} = useContext(AuthContext)
     const [owner, setOwner] = useState({})
     // const navigate = useNavigate()
     
@@ -18,7 +18,7 @@ export default function Profile ({navigate}) {
     }
 
     function fetchOwner() {
-        fetch(`/api/owners/${user.id}`)
+        fetch(`/api/owners/${authContext.user.id}`)
         .then(res => res.json())
         .then(data => setOwner(data))
     }

@@ -1,12 +1,13 @@
 import { useContext, useState, useEffect } from "react"
 import AuthContext from "../context/AuthContext"
 import PetContainer from "../components/PetContainer"
-export default function Dashboard ({adoptions}) {
-    const userContext = useContext(AuthContext)
+export default function Dashboard ({userId, adoptions}) {
+    const authContext = useContext(AuthContext)
     const [mypets, setMyPets] = useState([])
     
     useEffect(() => {
-        fetch(`/api/owners/${1}/pets`)
+    const user_id = authContext.user.id
+    fetch(`/api/owners/${user_id}/pets`)
       .then(res => res.json())
       .then(pets => setMyPets(pets))
     }, [])

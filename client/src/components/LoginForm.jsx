@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { Formik, Field, ErrorMessage, Form } from "formik"
 import * as yup from "yup"
 import AuthContext from "./../context/AuthContext"
-export default function LoginForm () {
-    const { user, setUser } = useContext(AuthContext)
+export default function LoginForm ({userId, setUserId}) {
+    // const { user, setUser } = useContext(AuthContext)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
     const initialValues = {

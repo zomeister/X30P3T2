@@ -2,7 +2,7 @@ from flask import session, request, make_response, jsonify, abort
 from flask_restful import Resource
 from flask_login import login_user, logout_user, login_required, current_user
 from config import db, app, api, login_manager, Migrate
-from models import User, Owner, Pet, Adoption, Action, PetState
+from models import User, Owner, Pet, Adoption, Action, PetState, Species
 import traceback
 
 @app.route('/')
@@ -337,7 +337,24 @@ class ActionById(Resource):
             return {"error": "an error occurred retrieving actions", "message": str(e)}, 500
 api.add_resource(Actions, '/actions')
 api.add_resource(ActionById, '/actions/<int:id>')
-
+class Specieses(Resource):
+    def get(self):
+        try:
+            specieses = Species.query.all()
+            specieses_dict = [s.to_dict() for s in specieses]
+            return specieses_dict, 200
+        except Exception as e:
+            traceback.print_exc()
+            return {"error": "an error occurred retrieving species", "message": str(e)}, 500
+class SpeciesesById(Resource):
+    def get(self, id):
+        try:
+            species = Species.query.filter_by(id=id).first()
+            return species.to_dict(), 200
+        except:
+            return {"error": "species not found"}, 404
+api.add_resource(Specieses, '/specieses')
+api.add_resource(SpeciesesById, '/specieses/<int:id>')
 
 class OwnersByAdoption(Resource):
     def get(self, adoption_id):
@@ -367,7 +384,6 @@ class PetByOwner(Resource):
             return pets, 200
         except:
             return {"error": "pet not found"}, 404
-        
 api.add_resource(PetByOwner, '/owners/<int:owner_id>/pets')
 
 class PetStatsByPet(Resource):
@@ -393,7 +409,7 @@ class PetStatsByPet(Resource):
             return '', 204
         except:
             return {'errors': 'action not found'}, 404
-api.add_resource(PetStatsByPet, '/pet/<int:pet_id>/stats')
+api.add_resource(PetStatsByPet, '/pets/<int:pet_id>/stats')
 
 
 if __name__ == '__main__':

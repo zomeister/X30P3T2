@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 
 import AuthContext from './context/AuthContext'
+import { AuthProvider } from './context/AuthContext'
 
 import Home from './pages/Home'
 import About from './pages/About'
@@ -25,7 +26,8 @@ import './styles/App.css'
 
 function App() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
+  const {auth} = useContext(AuthContext)
+  const [userId, setUserId] = useState(null)
 
   function authorizeUser() {
     fetch('/api/authorize_session')
@@ -33,23 +35,23 @@ function App() {
       if (res.ok) {
         res.json()
         .then((data) => {
-          setUser(data)
+          setAuth(data)
         })
       } else {
-        setUser(null)
-        console.log(user)
+        setAuth(null)
+        console.log(auth)
       }
     })
   }
   useEffect(() => {
     authorizeUser()
+  }, [userId])
+
+
+  useEffect(() => {
+    authorizeUser()
   }, [user])
-
-
-  // useEffect(() => {
-  //   authorizeUser()
-  // }, [user])
-  // console.log(user)
+  console.log(user)
 
   const [count, setCount] = useState(0)
 
@@ -78,19 +80,16 @@ function App() {
       fetch('/api/owners')
       .then(res => res.json())
       .then(owners => setOwners(owners))
-      console.log(owners)
   }
   function fetchPets() {
     fetch('/api/pets')
     .then(res => res.json())
     .then(pets => setPets(pets))
-    console.log(pets)
   }
   function fetchAdoptables() {
     fetch('/api/pound')
     .then(res => res.json())
     .then(adoptables => setAdoptables(adoptables))
-    console.log(adoptables)
   }
   function fetchAdoptions() {
     fetch('/api/adoptions')
@@ -100,7 +99,7 @@ function App() {
 
 
   return (
-      <AuthContext.Provider value={{user, setUser}}>
+      <AuthProvider >
         <Header navigate={navigate}/>
         <Routes>
           <Route exact path="/" element={<Home />} />
@@ -108,7 +107,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/create_profile" element={<CreateProfile />} />
-          <Route path="/dashboard" element={<Dashboard adoptions={adoptions}/>} />
+          <Route path="/dashboard" element={<Dashboard userId={userId} adoptions={adoptions}/>} />
           <Route path="/logout" element={<Logout />} />
           <Route path="/profile" element={<Profile navigate={navigate} />} />
           <Route path="/featured_owners" element={<FeaturedOwners owners={owners} />} />
@@ -116,7 +115,7 @@ function App() {
           <Route path="/pound" element={<Pound pets={adoptables}/>} />
         </Routes>
         <Footer />
-      </AuthContext.Provider>
+      </AuthProvider>
   )
 }
 
